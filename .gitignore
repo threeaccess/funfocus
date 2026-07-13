@@ -6,3 +6,9 @@ Thumbs.db
 !.dev.vars.example
 .env*
 !.env.example
+
+# Claude Code project instructions (local only)
+CLAUDE.md
+
+# SMB network share temp artifacts
+.smbdeleteAAA*

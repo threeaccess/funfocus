@@ -2,18 +2,493 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/timer/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/svg+xml" href="vite.svg" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;800&display=swap"
+      rel="stylesheet"
+    />
     <title>Anime Pomodoro</title>
-    <script type="module" crossorigin src="/assets/index-BPwqDaXc.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-C4bRqoVP.css">
+    <style>
+      :root {
+        --bg-primary: #0f172a;
+        --bg-panel: rgba(30, 41, 59, 0.5);
+        --bg-panel-border: rgba(255, 255, 255, 0.1);
+        --text-main: #f8fafc;
+        --text-muted: #94a3b8;
+        --accent-focus: #f43f5e;
+        --accent-short: #0ea5e9;
+        --accent-long: #8b5cf6;
+        --shadow-glow: 0 0 20px rgba(244, 63, 94, 0.3);
+        --font-body: "Inter", system-ui, sans-serif;
+        --font-timer: "Outfit", "Inter", system-ui, sans-serif;
+        --banner-h: 90px;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        -webkit-tap-highlight-color: transparent;
+      }
+      html,
+      body {
+        overscroll-behavior: none;
+        touch-action: manipulation;
+      }
+      #ad-banner {
+        width: 100%;
+        height: var(--banner-h);
+        background: #1a1a2e;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #555;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        position: relative;
+        z-index: 10;
+      }
+      #ad-banner:after {
+        content: "Ad Space";
+        opacity: 0.4;
+      }
+      body {
+        font-family: var(--font-body);
+        background-color: var(--bg-primary);
+        color: var(--text-main);
+        position: relative;
+        overflow: hidden;
+        height: 100vh;
+        height: 100dvh;
+      }
+      #root {
+        position: relative;
+        height: calc(100vh - var(--banner-h));
+        height: calc(100dvh - var(--banner-h));
+        overflow: hidden;
+      }
+      .glass-panel {
+        background: var(--bg-panel);
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
+        border: 1px solid var(--bg-panel-border);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px #0000004d;
+      }
+      .bg-layer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -2;
+        background-size: cover;
+        background-position: center;
+        transition: opacity 0.8s ease-in-out;
+      }
+      video.bg-layer {
+        object-fit: cover;
+        object-position: center;
+      }
+      .bg-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: -1;
+        background: linear-gradient(to bottom, #0f172a22, #0f172a99);
+        pointer-events: none;
+      }
+      .btn {
+        background: #ffffff1a;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: var(--text-main);
+        padding: 0.75rem 1.5rem;
+        border-radius: 12px;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        font-family: inherit;
+      }
+      .btn:hover {
+        background: #fff3;
+        transform: translateY(-1px);
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      .theme-focus {
+        --shadow-glow: 0 0 30px rgba(244, 63, 94, 0.4);
+      }
+      .theme-shortBreak {
+        --shadow-glow: 0 0 30px rgba(14, 165, 233, 0.4);
+      }
+      .theme-longBreak {
+        --shadow-glow: 0 0 30px rgba(139, 92, 246, 0.4);
+      }
+      .lucide {
+        stroke: currentColor;
+        stroke-width: 2;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        fill: none;
+        flex: none;
+      }
+
+      /* ---- Control panel ---- */
+      .controls {
+        position: absolute;
+        bottom: 1.5rem;
+        left: 1.5rem;
+        width: 300px;
+        text-align: center;
+        padding: 1rem 1.1rem;
+        z-index: 20;
+      }
+      .icon-btn {
+        padding: 0.4rem;
+        border-radius: 10px;
+        background: #ffffff14;
+      }
+      .icon-btn.active {
+        color: var(--accent-focus);
+        background: #f43f5e22;
+        border-color: transparent;
+      }
+      .mode-chip {
+        padding: 0.35rem 0.7rem;
+        font-size: 0.78rem;
+        border-radius: 999px;
+      }
+      .timer {
+        font-size: 3.4rem;
+        font-weight: 800;
+        font-family: var(--font-timer);
+        text-shadow: var(--shadow-glow);
+        margin: 0.5rem 0 0.7rem;
+        line-height: 1;
+        transition: text-shadow 0.3s ease;
+        cursor: pointer;
+        user-select: none;
+      }
+
+      /* ===== Scene UI zones (spread controls, corner timer) ===== */
+      .ff-topbar {
+        position: absolute;
+        top: 10px;
+        left: 14px;
+        right: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.25rem;
+        z-index: 20;
+        transition: opacity 0.5s ease;
+      }
+      .ff-topbar .icon-btn {
+        background: transparent;
+        border: none;
+        color: var(--text-main);
+        padding: 0.35rem;
+        opacity: 0.5;
+        border-radius: 10px;
+        filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.65));
+        transition: opacity 0.2s ease, background 0.2s ease, color 0.2s ease;
+      }
+      .ff-topbar .icon-btn:hover {
+        opacity: 1;
+        background: #ffffff1a;
+        transform: none;
+      }
+      .ff-topbar .icon-btn.active {
+        opacity: 1;
+        color: var(--accent-focus);
+        background: transparent;
+      }
+
+      .ff-timerzone {
+        position: absolute;
+        left: 22px;
+        bottom: 128px;
+        z-index: 20;
+        text-align: left;
+        transform-origin: left bottom;
+        transition: opacity 0.5s ease,
+          transform 0.45s cubic-bezier(0.2, 0.9, 0.3, 1);
+      }
+      .ff-modelabel {
+        font-size: 0.7rem;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--text-muted);
+        margin-bottom: 0.15rem;
+        max-width: 62vw;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.6));
+      }
+      .ff-timerzone .timer {
+        margin: 0;
+        text-align: left;
+      }
+
+      .ff-bottombar {
+        position: absolute;
+        left: 12px;
+        right: 12px;
+        bottom: max(16px, env(safe-area-inset-bottom));
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        z-index: 20;
+        opacity: 0.9;
+        transition: opacity 0.5s ease;
+      }
+      .ff-bottombar:hover {
+        opacity: 1;
+      }
+      .ff-modes {
+        display: flex;
+        gap: 0.4rem;
+        justify-content: center;
+        flex-wrap: wrap;
+      }
+      .ff-actions {
+        display: flex;
+        gap: 0.5rem;
+        justify-content: center;
+      }
+
+      /* Running: fade the chrome, shrink the timer; a tap reveals controls. */
+      .ff-running .ff-topbar,
+      .ff-running .ff-bottombar {
+        opacity: 0.05;
+        pointer-events: none;
+      }
+      .ff-running .ff-timerzone {
+        opacity: 0.85;
+      }
+      .ff-running .ff-timerzone .timer {
+        font-size: 2.1rem;
+      }
+      .ff-running.ff-awake .ff-topbar,
+      .ff-running.ff-awake .ff-bottombar {
+        opacity: 1;
+        pointer-events: auto;
+      }
+      .ff-running.ff-awake .ff-timerzone {
+        opacity: 1;
+      }
+
+      /* ---- Side background nav (desktop only) ---- */
+      .side-nav {
+        position: absolute;
+        top: 50%;
+        transform: translateY(-50%);
+        z-index: 15;
+      }
+      .side-nav.left {
+        left: 1rem;
+      }
+      .side-nav.right {
+        right: 1rem;
+      }
+      .side-nav .btn {
+        padding: 0.55rem;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.25);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        opacity: 0.3;
+      }
+      .side-nav .btn:hover {
+        opacity: 1;
+      }
+
+      /* ---- Bottom sheets ---- */
+      .sheet-wrap {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.35);
+        animation: fade 0.18s ease;
+      }
+      .sheet {
+        width: calc(100% - 24px);
+        max-width: 440px;
+        margin: 0 auto max(12px, env(safe-area-inset-bottom));
+        border-radius: 22px;
+        padding: 1rem 1.15rem 1.15rem;
+        position: relative;
+        max-height: 72dvh;
+        display: flex;
+        flex-direction: column;
+        animation: rise 0.22s cubic-bezier(0.2, 0.9, 0.3, 1);
+      }
+      @keyframes rise {
+        from {
+          transform: translateY(24px);
+          opacity: 0.4;
+        }
+      }
+      @keyframes fade {
+        from {
+          opacity: 0;
+        }
+      }
+      .sheet h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .sheet-close {
+        position: absolute;
+        top: 0.7rem;
+        right: 0.7rem;
+        padding: 0.35rem;
+        border: none;
+        background: #ffffff14;
+      }
+      .sheet-scroll {
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        min-height: 0;
+      }
+      .chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.4rem 0.75rem;
+        border-radius: 999px;
+        background: #ffffff14;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        font-size: 0.8rem;
+        cursor: pointer;
+        color: var(--text-main);
+        transition: all 0.15s ease;
+      }
+      .chip.active {
+        background: var(--accent-focus);
+        border-color: transparent;
+        color: #fff;
+      }
+      .stepper-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.45rem 0;
+        font-size: 0.9rem;
+      }
+      .stepper {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      .step-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 9px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background: #ffffff14;
+        border: 1px solid rgba(255, 255, 255, 0.18);
+        cursor: pointer;
+        color: inherit;
+        padding: 0;
+      }
+      .step-val {
+        min-width: 2ch;
+        text-align: center;
+        font-variant-numeric: tabular-nums;
+        font-weight: 600;
+      }
+      .sheet input,
+      .sheet textarea {
+        width: 100%;
+        background: rgba(0, 0, 0, 0.22);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        color: #fff;
+        border-radius: 12px;
+        padding: 0.7rem 0.8rem;
+        font-family: inherit;
+        font-size: 0.9rem;
+        resize: none;
+      }
+      .row {
+        display: flex;
+        gap: 0.5rem;
+      }
+      .muted {
+        color: var(--text-muted);
+        font-size: 0.82rem;
+      }
+
+      /* ---- Mobile ---- */
+      @media (max-width: 640px) {
+        :root {
+          --banner-h: 48px;
+        }
+        #ad-banner {
+          font-size: 0.7rem;
+        }
+        .side-nav {
+          display: none;
+        }
+        .controls {
+          left: 12px;
+          right: 12px;
+          bottom: max(12px, env(safe-area-inset-bottom));
+          width: auto;
+          padding: 0.85rem 1rem;
+        }
+        .timer {
+          font-size: 2.9rem;
+        }
+        .ff-timerzone {
+          left: 16px;
+          bottom: 122px;
+        }
+        .ff-running .ff-timerzone .timer {
+          font-size: 1.9rem;
+        }
+        .sheet {
+          max-width: none;
+        }
+      }
+    </style>
   </head>
   <body>
     <!-- Ad Banner — replace with AdSense code once registered -->
     <div id="ad-banner"></div>
     <div id="root"></div>
+
+    <!-- App modules: core first, then features (any order), then boot last. -->
+    <script src="js/core.js"></script>
+    <script src="js/features/story.js"></script>
+    <script src="js/features/flow.js"></script>
+    <script src="js/features/insight.js"></script>
+    <script src="js/features/ambient.js"></script>
+    <script src="js/features/world.js"></script>
+    <script src="js/boot.js"></script>
   </body>
 </html>
